@@ -27,10 +27,10 @@ public class WhereParser extends InstructionParser {
     while (hasClause) {
       currInd++;
 
-      String field = parts[currInd++];
+      String field = this.parts[currInd++];
       int operation;
 
-      switch (parts[currInd]) {
+      switch (this.parts[currInd]) {
         case ">": {
           operation = 0;
           break;
@@ -56,16 +56,25 @@ public class WhereParser extends InstructionParser {
         }
       }
 
-      String value = parts[++currInd];
+      String value = this.parts[++currInd];
 
-      this.clauses.pushClause(field, operation, value);
+      this.clauses.pushSingleClause(field, operation, value);
 
-      // TODO: добавить обработку OR
       currInd++;
-      if (currInd == parts.length || !parts[currInd].toUpperCase().equals("AND")) {
+
+      if (currInd == this.parts.length) {
         hasClause = false;
+        continue;
+      }
+
+      if (this.parts[currInd].toUpperCase().equals("OR")) {
+        this.clauses.pushClauseSet();
+      } else if (!this.parts[currInd].toUpperCase().equals("AND")) {
+          hasClause = false;
       }
     }
+
+    this.clauses.pushClauseSet();
 
     return currInd;
   }

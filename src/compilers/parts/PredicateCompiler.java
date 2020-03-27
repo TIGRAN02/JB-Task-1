@@ -4,6 +4,7 @@ import basic.Pair;
 import queries.parts.Where;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 public class PredicateCompiler implements PartCompiler {
@@ -13,15 +14,10 @@ public class PredicateCompiler implements PartCompiler {
     this.where = where;
   }
 
-  @Override
-  public String compile() {
-    if (!this.where.isReal()) {
-      return "{}";
-    }
-
+  private static String compileClauseSet(HashMap<String, ArrayList<Pair<Integer, String>>> set) {
     StringBuilder predicate = new StringBuilder("{");
 
-    for (Map.Entry<String, ArrayList<Pair<Integer, String>>> clause : this.where.getClauses().entrySet()) {
+    for (Map.Entry<String, ArrayList<Pair<Integer, String>>> clause : set.entrySet()) {
       predicate.append(clause.getKey()).append(": ");
 
       if (clause.getValue().get(0).getFirst() == 3) {
@@ -56,6 +52,27 @@ public class PredicateCompiler implements PartCompiler {
     }
 
     predicate.delete(predicate.length() - 2, predicate.length()).append("}");
+
+    return predicate.toString();
+  }
+
+  @Override
+  public String compile() {
+    if (!this.where.isReal()) {
+      return "{}";
+    }
+
+    if (this.where.hasOneClause()) {
+      return compileClauseSet(this.where.getClauses().get(0));
+    }
+
+    StringBuilder predicate = new StringBuilder("{$or: [");
+
+    for (HashMap<String, ArrayList<Pair<Integer, String>>> set : this.where.getClauses()) {
+      predicate.append(compileClauseSet(set)).append(", ");
+    }
+
+    predicate.delete(predicate.length() - 2, predicate.length()).append("]}");
 
     return predicate.toString();
   }
